@@ -18,22 +18,48 @@
         .verify-box { background-color: #f0fdf4; border: 1px solid #10b981; padding: 1rem; border-radius: 0.5rem; margin-top: 1.5rem; }
         .link-card { display: inline-flex; align-items: center; padding: 0.5rem 0.75rem; background-color: #eff6ff; color: #1d4ed8; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        /* 탭 버튼 기본 스타일 */
+        .tab-btn {
+            position: relative;
+            padding: 0.5rem 0.25rem;
+            color: #64748b;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        /* 활성화된 탭 스타일 (파란색 밑줄) */
+        .tab-btn.active {
+            color: #2563eb !important;
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #2563eb;
+        }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <span class="text-2xl font-bold text-slate-800">📡 GCP MCP Connect</span>
-                    <span class="ml-4 text-sm bg-blue-100 text-blue-800 py-1 px-2 rounded-full hidden sm:inline-block">BigQuery & Logging 통합 가이드</span>
+
+<nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 lg:px-6">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center cursor-pointer shrink-0" onclick="navigateTo('overview')">
+                    <span class="text-2xl mr-2">📡</span>
+                    <span class="text-lg md:text-xl font-bold text-slate-800 tracking-tight">GCP MCP Connect</span>
+                    <span class="hidden md:inline-block ml-3 px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full border border-blue-100 whitespace-nowrap">
+                        BigQuery & Logging 통합 가이드
+                    </span>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <button onclick="navigateTo('overview')" class="text-slate-600 hover:text-blue-600 font-medium">개요</button>
-                    <button onclick="navigateTo('wizard')" class="text-slate-600 hover:text-blue-600 font-medium">가이드 시작</button>
-                    <button onclick="navigateTo('troubleshoot')" class="text-slate-600 hover:text-blue-600 font-medium">문제 해결</button>
+                
+                <div class="flex items-center space-x-4 md:space-x-8 ml-4">
+                    <button id="nav-overview" onclick="navigateTo('overview')" class="tab-btn active text-sm whitespace-nowrap">개요</button>
+                    <button id="nav-wizard" onclick="navigateTo('wizard')" class="tab-btn text-sm whitespace-nowrap">가이드 시작</button>
+                    <button id="nav-troubleshoot" onclick="navigateTo('troubleshoot')" class="tab-btn text-sm whitespace-nowrap">문제 해결</button>
                 </div>
             </div>
         </div>
@@ -441,7 +467,27 @@
         ];
 
         let currentStepIndex = 0;
-        function navigateTo(vId) { ['overview', 'wizard', 'troubleshoot'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden')); document.getElementById(`view-${vId}`).classList.remove('hidden'); if(vId === 'wizard') { renderStepList(); renderStepContent(); } }
+        function navigateTo(vId) {
+            // 1. 모든 섹션 숨기고 선택한 섹션만 보이기
+            ['overview', 'wizard', 'troubleshoot'].forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.classList.add('hidden');
+            });
+            document.getElementById(`view-${vId}`).classList.remove('hidden');
+
+            // 2. 모든 탭 버튼에서 active 클래스 제거
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            // 3. 현재 클릭한 탭 버튼에만 active 클래스 추가
+            const activeBtn = document.getElementById(`nav-${vId}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // 4. 가이드 시작 페이지면 첫 단계 렌더링
+            if(vId === 'wizard') { renderStepList(); renderStepContent(); }
+            
+            // 5. 클릭 시 최상단으로 스크롤 이동
+            window.scrollTo(0, 0);
+        }
         function renderStepList() { document.getElementById('step-list').innerHTML = steps.map((s, i) => `<li class="cursor-pointer ${i === currentStepIndex ? 'step-active' : 'step-inactive'}" onclick="goToStep(${i})"><div class="p-4"><span class="text-xs font-bold">STEP ${s.id}</span><h4 class="text-sm font-bold">${s.title}</h4></div></li>`).join(''); }
         function renderStepContent() { document.getElementById('step-content-container').innerHTML = `<div class="fade-in">${steps[currentStepIndex].content}</div>`; document.getElementById('btn-prev').disabled = currentStepIndex === 0; document.getElementById('btn-next').textContent = currentStepIndex === steps.length - 1 ? '완료' : '다음 단계'; if(steps[currentStepIndex].id === 5) updateJson(); }
         function changeStep(d) { currentStepIndex += d; renderStepList(); renderStepContent(); }
